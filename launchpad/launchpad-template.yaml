@@ -67,25 +67,30 @@ parameters:
 - name: LAUNCHPAD_BACKEND_CATALOG_GIT_REF
   displayName: Catalog Git Reference
   description: The Git reference to use for the above repository
-  value: v10
+  value: v11
   required: true
+- name: LAUNCHPAD_BACKEND_CATALOG_REINDEX_TOKEN
+  displayName: Catalog Reindex Token
+  description: A token that must be passed to the catalog reindex service to trigger the catalog
+    reindexing.
+  value:
 - name: MISSIONCONTROL_IMAGE
   value: openshiftio/launchpad-missioncontrol
   required: true
 - name: MISSIONCONTROL_IMAGE_TAG
-  value: v11
+  value: latest
   required: true
 - name: BACKEND_IMAGE
   value: openshiftio/launchpad-backend
   required: true
 - name: BACKEND_IMAGE_TAG
-  value: v10
+  value: latest
   required: true
 - name: FRONTEND_IMAGE
   value: openshiftio/launchpad-frontend
   required: true
 - name: FRONTEND_IMAGE_TAG
-  value: v10
+  value: latest
   required: true
 - name: PROXY_IMAGE
   value: registry.devshift.net/openshiftio/launchpad-nginx
@@ -105,6 +110,7 @@ objects:
     launchpad.missioncontrol.openshift.console.url: ${LAUNCHPAD_MISSIONCONTROL_OPENSHIFT_CONSOLE_URL}
     launchpad.backend.catalog.git.repository: ${LAUNCHPAD_BACKEND_CATALOG_GIT_REPOSITORY}
     launchpad.backend.catalog.git.ref: ${LAUNCHPAD_BACKEND_CATALOG_GIT_REF}
+    launchpad.backend.catalog.reindex.token: ${LAUNCHPAD_BACKEND_CATALOG_REINDEX_TOKEN}
     launchpad.keycloak.url: ${LAUNCHPAD_KEYCLOAK_URL}
     launchpad.keycloak.realm: ${LAUNCHPAD_KEYCLOAK_REALM}
     launchpad.tracker.segment.token: ${LAUNCHPAD_TRACKER_SEGMENT_TOKEN}
@@ -129,7 +135,7 @@ objects:
       - id: pro-us-east-1
         apiUrl: https://api.pro-us-east-1.openshift.com
         consoleUrl: https://console.pro-us-east-1.openshift.com
-  
+
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -218,24 +224,17 @@ objects:
               path: /api/health/ready
               port: 8080
               scheme: HTTP
-            failureThreshold: 3
-            initialDelaySeconds: 120
+            initialDelaySeconds: 60
             periodSeconds: 20
-            successThreshold: 1
             timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: /api/health/ready
               port: 8080
               scheme: HTTP
-            failureThreshold: 3
             initialDelaySeconds: 60
             periodSeconds: 20
-            successThreshold: 1
             timeoutSeconds: 10
-          resources:
-            limits:
-              memory: 1Gi
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -295,6 +294,11 @@ objects:
               configMapKeyRef:
                 name: launchpad
                 key: launchpad.backend.catalog.git.ref
+          - name: LAUNCHPAD_BACKEND_CATALOG_REINDEX_TOKEN
+            valueFrom:
+              configMapKeyRef:
+                name: launchpad
+                key: launchpad.backend.catalog.reindex.token
           image: ${BACKEND_IMAGE}:${BACKEND_IMAGE_TAG}
           imagePullPolicy: Always
           name: launchpad-backend
@@ -308,24 +312,20 @@ objects:
               path: /health/ready
               port: 8080
               scheme: HTTP
-            failureThreshold: 3
-            initialDelaySeconds: 300
+            initialDelaySeconds: 60
             periodSeconds: 20
-            successThreshold: 1
             timeoutSeconds: 10
+          resources:
+            limits:
+              memory: 1500Mi
           livenessProbe:
             httpGet:
               path: /health/ready
               port: 8080
               scheme: HTTP
-            failureThreshold: 3
-            initialDelaySeconds: 300
+            initialDelaySeconds: 60
             periodSeconds: 20
-            successThreshold: 1
             timeoutSeconds: 10
-          resources:
-            limits:
-              memory: 1500Mi
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -404,20 +404,16 @@ objects:
             httpGet:
               path: /wizard
               port: 8080
-            initialDelaySeconds: 120
+            initialDelaySeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
             periodSeconds: 20
-            successThreshold: 1
           livenessProbe:
             httpGet:
               path: /wizard
               port: 8080
             initialDelaySeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
             periodSeconds: 20
-            successThreshold: 1
         restartPolicy: Always
         dnsPolicy: ClusterFirst
         securityContext: {}
@@ -484,18 +480,15 @@ objects:
             httpGet:
               path: /wizard
               port: 8080
-            initialDelaySeconds: 120
+            initialDelaySeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
             periodSeconds: 20
-            successThreshold: 1
           livenessProbe:
             httpGet:
               path: /wizard
               port: 8080
             initialDelaySeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
             periodSeconds: 20
         dnsPolicy: ClusterFirst
         restartPolicy: Always
