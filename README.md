@@ -1,1 +1,1 @@
-OCP templates - Microservices development with RHOAR course
+OCP templates - Microservices development with RHOAR course 
